@@ -9,7 +9,7 @@ or Virtual Box:
 https://www.virtualbox.org/wiki/Downloads
 2. Download VM and IOT-Rosbot-Console.exe
 3. Run the VM
-4. Open the Terminal and run
+4. Open the VMs Terminal and run
 ~~~
 $ cd catkin_ws
 ~~~
