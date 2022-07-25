@@ -9,8 +9,8 @@ or Virtual Box:
 https://www.virtualbox.org/wiki/Downloads
 2. Download the VM and IOT-Rosbot-Console.exe on the Release page  
 VM information:  
-Username: iot
-Password: P@ssword1
+Username: iot  
+Password: P@ssword123
 3. Run the VM
 4. Open the VMs Terminal and run
 ~~~
