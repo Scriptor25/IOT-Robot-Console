@@ -20,21 +20,21 @@ using UnityEngine.VFX;
 public class RobotController : MonoBehaviour
 {
     // Ros Topics
-    public string inputRosTopic = "/joy";
-    public string voltageRosTopic = "/voltage";
-    public string tofRosTopic = "/tof";
-    public string rpmRosTopic = "/rpm";
-    public string poseRosTopic = "/pose";
-    public string clockRosTopic = "/clock";
-    public string lifeRosTopic = "/life_detection";
-    public string imageRosTopic = "/camera/image_raw/compressed";
-    public string scanRosTopic = "/scan";
-    public string imuRosTopic = "/imu";
+    //public string nameSpace = "/wgg";
     public string calibrateRosTopic = "/calibrate";
+    public string clockRosTopic = "/clock";
     public string currentRosTopic = "/current";
+    public string imageRosTopic = "/camera/image_raw/compressed";
+    public string imuRosTopic = "/imu";
+    public string inputRosTopic = "/joy";
+    public string lifeRosTopic = "/event_msg";
+    public string poseRosTopic = "/pose";
+    public string rpmRosTopic = "/rpm";
+    public string scanRosTopic = "/scan";
+    public string tofRosTopic = "/tof";
+    public string voltageRosTopic = "/voltage";
 
     // Diff Image
-    public float throttle = 0.3f;
     public float imageMotionThreshold = 0.2f;
     public int motionPixelThreshold = 1000;
 
@@ -49,7 +49,7 @@ public class RobotController : MonoBehaviour
 
     bool firstImg = true;
 
-    // Sensordata
+    // Sensordata Views
     public Text voltageText;
     public Text rpmFrontLeftText;
     public Text rpmFrontRightText;
@@ -88,8 +88,6 @@ public class RobotController : MonoBehaviour
     public Mesh meshToParticlize;
     public bool updateComplete = false;
 
-    RosMessageTypes.Geometry.QuaternionMsg botRotation = new RosMessageTypes.Geometry.QuaternionMsg();
-
     // Settings
     public InputField settingsCam;
     public InputField settingsJoy;
@@ -104,17 +102,9 @@ public class RobotController : MonoBehaviour
     public InputField settingsCalibrate;
     public InputField settingsCurrent;
 
-    // Input Management
-    bool button1 = false;
-    bool button2 = false;
-    bool button3 = false;
-    bool button4 = false;
-    bool button5 = false;
-    bool button6 = false;
-    bool button7 = false;
-    bool button8 = false;
-    bool button9 = false;
-
+    // Movement Input
+    public float throttle = 0.3f;
+    bool[] lightKeys = new bool[9];
     bool diffimg = false;
 
     private void Start()
@@ -151,51 +141,68 @@ public class RobotController : MonoBehaviour
 
     private void Update()
     {
-        throttle -= Input.GetAxisRaw("KeyThrottle") / 100.0f;
+        // Check if there are any joysticks available
+        if(Input.GetJoystickNames() != null && Input.GetJoystickNames().Length != 0)
+        {
+            // Joystick axis input
+            throttle = 1.0f - ((Input.GetAxisRaw("Throttle") + 1) * 0.5f);
+        }
+        
+        // Key input
+        throttle += Input.GetAxisRaw("KeyThrottle") / 100.0f;
 
-        throttle = 1.0f - ((Input.GetAxisRaw("Throttle") + 1) * 0.5f);
-
+        // Clamp throttle value
         throttle = Mathf.Clamp(throttle, 0.05f, 1.0f);
         throttleText.text = (int)(throttle * 100) + "%";
 
+        // Toggle diff image
         if (Input.GetKeyDown(KeyCode.Q)) diffimg = !diffimg;
 
-        if (Input.GetKeyDown(KeyCode.Alpha1)) button1 = !button1;
-        if (Input.GetKeyDown(KeyCode.Alpha2)) button2 = !button2;
-        if (Input.GetKeyDown(KeyCode.Alpha3)) button3 = !button3;
-        if (Input.GetKeyDown(KeyCode.Alpha4)) button4 = !button4;
-        if (Input.GetKeyDown(KeyCode.Alpha5)) button5 = !button5;
-        if (Input.GetKeyDown(KeyCode.Alpha6)) button6 = !button6;
-        if (Input.GetKeyDown(KeyCode.Alpha7)) button7 = !button7;
-        if (Input.GetKeyDown(KeyCode.Alpha8)) button8 = !button8;
-        if (Input.GetKeyDown(KeyCode.Alpha9)) button9 = !button9;
+        // Toggle lights
+        if (Input.GetKeyDown(KeyCode.Alpha1)) lightKeys[0] = !lightKeys[0];
+        if (Input.GetKeyDown(KeyCode.Alpha2)) lightKeys[1] = !lightKeys[1];
+        if (Input.GetKeyDown(KeyCode.Alpha3)) lightKeys[2] = !lightKeys[2];
+        if (Input.GetKeyDown(KeyCode.Alpha4)) lightKeys[3] = !lightKeys[3];
+        if (Input.GetKeyDown(KeyCode.Alpha5)) lightKeys[4] = !lightKeys[4];
+        if (Input.GetKeyDown(KeyCode.Alpha6)) lightKeys[5] = !lightKeys[5];
+        if (Input.GetKeyDown(KeyCode.Alpha7)) lightKeys[6] = !lightKeys[6];
+        if (Input.GetKeyDown(KeyCode.Alpha8)) lightKeys[7] = !lightKeys[7];
+        if (Input.GetKeyDown(KeyCode.Alpha9)) lightKeys[8] = !lightKeys[8];
 
+        // Get movement input
         float x = 0.5f * Input.GetAxisRaw("Horizontal");
         float y = Input.GetAxisRaw("Vertical");
 
+        // Joystick msg for IOT
         JoyMsg joyMsg = new JoyMsg();
+
         joyMsg.header.frame_id = "joy";
         joyMsg.header.stamp = time;
+
         joyMsg.axes = new float[4];
         joyMsg.buttons = new int[12];
+
         joyMsg.axes[0] = 0;
         joyMsg.axes[1] = y;
         joyMsg.axes[2] = -x;
         joyMsg.axes[3] = throttle * 2 - 1.0f;
-        joyMsg.buttons[0] = button1 ? 1 : 0;
-        joyMsg.buttons[1] = button2 ? 1 : 0;
-        joyMsg.buttons[2] = button3 ? 1 : 0;
-        joyMsg.buttons[3] = button4 ? 1 : 0;
-        joyMsg.buttons[4] = button5 ? 1 : 0;
-        joyMsg.buttons[5] = button6 ? 1 : 0;
-        joyMsg.buttons[6] = button7 ? 1 : 0;
-        joyMsg.buttons[7] = button8 ? 1 : 0;
-        joyMsg.buttons[8] = button9 ? 1 : 0;
+
+        joyMsg.buttons[0] = lightKeys[0] ? 1 : 0;
+        joyMsg.buttons[1] = lightKeys[1] ? 1 : 0;
+        joyMsg.buttons[2] = lightKeys[2] ? 1 : 0;
+        joyMsg.buttons[3] = lightKeys[3] ? 1 : 0;
+        joyMsg.buttons[4] = lightKeys[4] ? 1 : 0;
+        joyMsg.buttons[5] = lightKeys[5] ? 1 : 0;
+        joyMsg.buttons[6] = lightKeys[6] ? 1 : 0;
+        joyMsg.buttons[7] = lightKeys[7] ? 1 : 0;
+        joyMsg.buttons[8] = lightKeys[8] ? 1 : 0;
         joyMsg.buttons[9] = Input.GetKey(KeyCode.Alpha0) ? 1 : 0;
         joyMsg.buttons[10] = Input.GetKey(KeyCode.E) ? 1 : 0;
         joyMsg.buttons[11] = 0;
+
         ros.Publish(inputRosTopic, joyMsg);
 
+        // Lidar pointcloud update
         if (updateComplete)
         {
             if (meshToParticlize != null)
@@ -329,11 +336,8 @@ public class RobotController : MonoBehaviour
     void OnPoseCallback(PoseMsg msg)
     {
         string str = "Position: x:" + (int)msg.pose.position.x + ", y:" + (int)msg.pose.position.y + ", z:" + (int)msg.pose.position.z + "\n";
-        str += "Rotation: x: " + (int)(msg.pose.orientation.x * 360) + ", y: " + (int)(msg.pose.orientation.y * 360) + ", z: " + (int)(msg.pose.orientation.z * 360) + ", w: " + (int)(msg.pose.orientation.w * 360);
-
+        str += "Rotation: x: " + (int)(msg.pose.orientation.x * Mathf.Rad2Deg) + ", y: " + (int)(msg.pose.orientation.y * Mathf.Rad2Deg) + ", z: " + (int)(msg.pose.orientation.z * Mathf.Rad2Deg) + ", w: " + (int)(msg.pose.orientation.w * Mathf.Rad2Deg);
         poseText.text = str;
-
-        botRotation = msg.pose.orientation;
     }
 
     void OnImageCallback(CompressedImageMsg msg)

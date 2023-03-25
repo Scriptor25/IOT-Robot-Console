@@ -8,8 +8,6 @@ public class CamMovement : MonoBehaviour
 
     Vector2 rot = new Vector2(25, 0);
 
-    public bool keyControlled = true;
-
     // Start is called before the first frame update
     void Start()
     {
@@ -19,24 +17,20 @@ public class CamMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            rot = new Vector2(25, 0);
+        }
+
         float x = 0;
         float y = 0;
 
         float zoom = Input.GetAxisRaw("Mouse ScrollWheel");
 
-        if (keyControlled)
+        if (Input.GetMouseButton(1))
         {
-            x = Input.GetAxis("Vertical");
-            y = -Input.GetAxis("Horizontal");
-        }
-        else
-        {
-            if (Input.GetMouseButton(1))
-            {
-                x = -Input.GetAxis("Mouse Y");
-                y = Input.GetAxis("Mouse X");
-            }
-            
+            x = -Input.GetAxis("Mouse Y");
+            y = Input.GetAxis("Mouse X");
         }
 
         //x *= Time.deltaTime * 200f;
@@ -54,5 +48,10 @@ public class CamMovement : MonoBehaviour
 
         if (transform.localPosition.z > 0) transform.localPosition = new Vector3(0, 0, 0);
         if (transform.localPosition.z < -20) transform.localPosition = new Vector3(0, 0, -20);
+    }
+
+    public void GetHelp()
+    {
+        Application.OpenURL("https://github.com/ScriptorGames/IOT-Robot-Console/wiki/Help");
     }
 }
